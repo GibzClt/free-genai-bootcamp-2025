@@ -40,7 +40,7 @@
 #### Required API Endpoints
     - GET /api/study-activities
     
-### Study Activity "/study_activity/:id"
+### Study Activity "/study-activities/:id"
 #### Purpose
     The purpose of this page is to provide a detailed view of a specific study activity.
 #### Components
@@ -58,7 +58,7 @@
     - GET /api/study-activity/:id
     - GET /api/study-activity/:id/study-sessions
 
-### Study Activity Launcher "/study-activity/:id/launch"
+### Study Activity Launcher "/study-activities/:id/launch"
 #### Purpose
     The purpose of this page is to provide a launcher for a specific study activity.
 #### Components
