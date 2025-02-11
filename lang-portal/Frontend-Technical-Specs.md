@@ -55,8 +55,8 @@
         - end time (inferred from last word_review_item submitted)
         - number of review items
 #### Required API Endpoints
-    - GET /api/study-activity/:id
-    - GET /api/study-activity/:id/study-sessions
+    - GET /api/study-activities/:id
+    - GET /api/study-activities/:id/study-sessions
 
 ### Study Activity Launcher "/study-activities/:id/launch"
 #### Purpose
