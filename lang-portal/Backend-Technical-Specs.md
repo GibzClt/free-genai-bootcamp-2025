@@ -20,16 +20,52 @@ A language learning school wants to build a prototype of learning portal which w
 backend_go/
 ├── cmd/
 │   └── server/
+│       └── main.go               # Entry point of the application
+│
 ├── internal/
-│   ├── models/     # Data structures and database operations
-│   ├── handlers/   # HTTP handlers organized by feature (dashboard, words, groups, etc.)
-│   └── service/    # Business logic
+│   ├── models/                   # Database models
+│   │   ├── word.go
+│   │   ├── group.go
+│   │   ├── study_session.go
+│   │   ├── study_activity.go
+│   │   ├── word_review_item.go
+│   │   └── word_group.go
+│   │
+│   ├── handlers/                 # HTTP handlers
+│   │   ├── dashboard.go         # Dashboard endpoints
+│   │   ├── words.go            
+│   │   ├── groups.go
+│   │   ├── study_sessions.go
+│   │   ├── study_activities.go
+│   │   └── settings.go
+│   │
+│   └── service/                  # Business logic
+│       ├── dashboard.go
+│       ├── words.go
+│       ├── groups.go
+│       ├── study_sessions.go
+│       ├── study_activities.go
+│       └── settings.go
+│
 ├── db/
-│   ├── migrations/
-│   └── seeds/      # For initial data population
-├── magefile.go
-├── go.mod
-└── words.db
+│   ├── migrations/              # SQL migration files
+│   │   ├── 0001_init.sql
+│   │   ├── 0002_create_words.sql
+│   │   ├── 0003_create_groups.sql
+│   │   ├── 0004_create_word_groups.sql
+│   │   ├── 0005_create_study_activities.sql
+│   │   ├── 0006_create_study_sessions.sql
+│   │   └── 0007_create_word_review_items.sql
+│   │
+│   └── seeds/                   # Seed data
+│       ├── basic_greetings.json
+│       ├── numbers.json
+│       └── common_phrases.json
+│
+├── magefile.go                  # Task runner definitions
+├── go.mod                       # Go module file
+├── go.sum                       # Go module checksums
+└── words.db                     # SQLite database file
 ```
 
 ## Database Schema

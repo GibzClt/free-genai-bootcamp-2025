@@ -1,0 +1,23 @@
+{
+  "group_name": "Common Phrases",
+  "words": [
+    {
+      "japanese": "ありがとうございます",
+      "romaji": "arigatou gozaimasu",
+      "english": "thank you",
+      "parts": {
+        "type": "expression",
+        "politeness": "polite"
+      }
+    },
+    {
+      "japanese": "すみません",
+      "romaji": "sumimasen",
+      "english": "excuse me/sorry",
+      "parts": {
+        "type": "expression",
+        "politeness": "neutral"
+      }
+    }
+  ]
+} 

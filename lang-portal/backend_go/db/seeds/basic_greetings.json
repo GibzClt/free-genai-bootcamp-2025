@@ -1,0 +1,32 @@
+{
+  "group_name": "Basic Greetings",
+  "words": [
+    {
+      "japanese": "こんにちは",
+      "romaji": "konnichiwa",
+      "english": "hello",
+      "parts": {
+        "type": "greeting",
+        "politeness": "neutral"
+      }
+    },
+    {
+      "japanese": "おはようございます",
+      "romaji": "ohayou gozaimasu",
+      "english": "good morning",
+      "parts": {
+        "type": "greeting",
+        "politeness": "polite"
+      }
+    },
+    {
+      "japanese": "さようなら",
+      "romaji": "sayounara",
+      "english": "goodbye",
+      "parts": {
+        "type": "greeting",
+        "politeness": "neutral"
+      }
+    }
+  ]
+} 
