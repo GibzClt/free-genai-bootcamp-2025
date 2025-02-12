@@ -87,20 +87,31 @@ func runTestMigrations(db *sql.DB) error {
 
 func seedTestData(db *sql.DB) error {
 	testData := []string{
+		// Words
 		`INSERT INTO words (japanese, romaji, english, parts) VALUES 
 		('こんにちは', 'konnichiwa', 'hello', '{"type":"greeting"}')`,
 		`INSERT INTO words (japanese, romaji, english, parts) VALUES 
 		('さようなら', 'sayounara', 'goodbye', '{"type":"greeting"}')`,
 		`INSERT INTO words (japanese, romaji, english, parts) VALUES 
 		('ありがとう', 'arigatou', 'thank you', '{"type":"greeting"}')`,
+
+		// Groups
 		`INSERT INTO groups (name) VALUES ('Basic Greetings')`,
+
+		// Word-Group associations
 		`INSERT INTO word_groups (word_id, group_id) VALUES (1, 1)`,
-		`INSERT INTO study_activities (name, description) 
-		VALUES ('Vocabulary Quiz', 'Practice your vocabulary with flashcards')`,
-		`INSERT INTO study_sessions (group_id, study_activity_id) 
-		VALUES (1, 1)`,
-		`INSERT INTO word_review_items (word_id, study_session_id, correct) 
-		VALUES (1, 1, true)`,
+
+		// Study activities with all required fields
+		`INSERT INTO study_activities (id, name, description, thumbnail_url) 
+		VALUES (1, 'Vocabulary Quiz', 'Practice your vocabulary with flashcards', 'quiz.png')`,
+
+		// Study sessions
+		`INSERT INTO study_sessions (id, group_id, study_activity_id, created_at) 
+		VALUES (1, 1, 1, datetime('now'))`,
+
+		// Word reviews
+		`INSERT INTO word_review_items (word_id, study_session_id, correct, created_at) 
+		VALUES (1, 1, true, datetime('now'))`,
 	}
 
 	for _, data := range testData {

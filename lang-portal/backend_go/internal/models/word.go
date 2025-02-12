@@ -2,15 +2,14 @@ package models
 
 import (
 	"database/sql"
-	"encoding/json"
 )
 
 type Word struct {
-	ID       int64             `json:"id"`
-	Japanese string           `json:"japanese"`
-	Romaji   string           `json:"romaji"`
-	English  string           `json:"english"`
-	Parts    json.RawMessage  `json:"parts"`
+	ID       int64  `json:"id"`
+	Japanese string `json:"japanese"`
+	Romaji   string `json:"romaji"`
+	English  string `json:"english"`
+	Parts    string `json:"parts"`
 }
 
 type WordStats struct {

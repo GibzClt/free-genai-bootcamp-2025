@@ -13,12 +13,12 @@ type StudySession struct {
 }
 
 type StudySessionDetail struct {
-	ID              int64     `json:"id"`
-	ActivityName    string    `json:"activity_name"`
-	GroupName       string    `json:"group_name"`
-	StartTime       time.Time `json:"start_time"`
-	EndTime         time.Time `json:"end_time"`
-	ReviewItemCount int       `json:"review_items_count"`
+	ID              int64  `json:"id"`
+	ActivityName    string `json:"activity_name"`
+	GroupName       string `json:"group_name"`
+	StartTime       string `json:"start_time"`
+	EndTime         string `json:"end_time"`
+	ReviewItemCount int    `json:"review_items_count"`
 }
 
 func GetStudySession(db *sql.DB, id int64) (*StudySessionDetail, error) {

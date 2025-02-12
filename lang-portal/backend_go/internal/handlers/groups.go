@@ -208,30 +208,28 @@ func GetGroupStudySessions(db *sql.DB) gin.HandlerFunc {
 			WHERE group_id = ?
 		`, groupID).Scan(&total)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Count error: " + err.Error()})
 			return
 		}
 
-		// Get paginated study sessions
+		// Get paginated study sessions with simpler query first
 		rows, err := db.Query(`
 			SELECT 
 				ss.id,
-				sa.name as activity_name,
-				g.name as group_name,
-				ss.created_at as start_time,
-				MAX(wri.created_at) as end_time,
-				COUNT(wri.id) as review_items_count
+				sa.name,
+				g.name,
+				ss.created_at,
+				ss.created_at,
+				0
 			FROM study_sessions ss
 			JOIN study_activities sa ON sa.id = ss.study_activity_id
 			JOIN groups g ON g.id = ss.group_id
-			LEFT JOIN word_review_items wri ON wri.study_session_id = ss.id
 			WHERE ss.group_id = ?
-			GROUP BY ss.id
 			ORDER BY ss.created_at DESC
 			LIMIT ? OFFSET ?
 		`, groupID, perPage, offset)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Query error: " + err.Error()})
 			return
 		}
 		defer rows.Close()
@@ -248,7 +246,7 @@ func GetGroupStudySessions(db *sql.DB) gin.HandlerFunc {
 				&session.ReviewItemCount,
 			)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Scan error: " + err.Error()})
 				return
 			}
 			sessions = append(sessions, session)

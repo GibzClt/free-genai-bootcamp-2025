@@ -18,9 +18,21 @@ func GetStudyActivity(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		activity, err := models.GetStudyActivity(db, id)
+		var activity struct {
+			ID           int64  `json:"id"`
+			Name         string `json:"name"`
+			Description  string `json:"description"`
+			ThumbnailURL string `json:"thumbnail_url"`
+		}
+
+		err = db.QueryRow(`
+			SELECT id, name, description, thumbnail_url
+			FROM study_activities
+			WHERE id = ?
+		`, id).Scan(&activity.ID, &activity.Name, &activity.Description, &activity.ThumbnailURL)
+
 		if err == sql.ErrNoRows {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Study activity not found"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "Activity not found"})
 			return
 		}
 		if err != nil {
@@ -122,34 +134,23 @@ func CreateStudyActivity(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		// Verify group exists
-		var exists bool
-		err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM groups WHERE id = ?)", request.GroupID).Scan(&exists)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		if !exists {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Group not found"})
-			return
-		}
-
-		// Create study session
-		var sessionID int64
-		err = db.QueryRow(`
+		result, err := db.Exec(`
 			INSERT INTO study_sessions (group_id, study_activity_id)
 			VALUES (?, ?)
-			RETURNING id
-		`, request.GroupID, request.StudyActivityID).Scan(&sessionID)
+		`, request.GroupID, request.StudyActivityID)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+
+		sessionID, _ := result.LastInsertId()
 
 		c.JSON(http.StatusCreated, gin.H{
 			"id":       sessionID,
 			"group_id": request.GroupID,
+			"success":  true,
+			"message": "Study activity created successfully",
 		})
 	}
 }

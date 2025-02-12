@@ -6,8 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"lang-portal/backend_go/internal/models"
+
+	"github.com/gin-gonic/gin"
 )
 
 func GetStudySessions(db *sql.DB) gin.HandlerFunc {
@@ -165,18 +166,6 @@ func CreateWordReview(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		// Verify session exists
-		var exists bool
-		err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM study_sessions WHERE id = ?)", sessionID).Scan(&exists)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		if !exists {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Study session not found"})
-			return
-		}
-
 		wordID, err := strconv.ParseInt(c.Param("word_id"), 10, 64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid word ID"})
@@ -186,30 +175,59 @@ func CreateWordReview(db *sql.DB) gin.HandlerFunc {
 		var request struct {
 			Correct bool `json:"correct" binding:"required"`
 		}
-
 		if err := c.ShouldBindJSON(&request); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		review := &models.WordReview{
-			WordID:         wordID,
-			StudySessionID: sessionID,
-			Correct:        request.Correct,
-			CreatedAt:      time.Now(),
+		// Validate session exists
+		var sessionExists bool
+		err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM study_sessions WHERE id = ?)", sessionID).Scan(&sessionExists)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if !sessionExists {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Study session not found"})
+			return
 		}
 
-		if err := models.CreateWordReview(db, review); err != nil {
+		// Validate word exists
+		var wordExists bool
+		err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM words WHERE id = ?)", wordID).Scan(&wordExists)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if !wordExists {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Word not found"})
+			return
+		}
+
+		result, err := db.Exec(`
+			INSERT INTO word_review_items (word_id, study_session_id, correct)
+			VALUES (?, ?, ?)
+		`, wordID, sessionID, request.Correct)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		id, _ := result.LastInsertId()
+		var createdAt string
+		err = db.QueryRow("SELECT created_at FROM word_review_items WHERE id = ?", id).Scan(&createdAt)
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
 		c.JSON(http.StatusCreated, gin.H{
 			"success":          true,
-			"word_id":         wordID,
+			"word_id":          wordID,
 			"study_session_id": sessionID,
-			"correct":         request.Correct,
-			"created_at":      review.CreatedAt,
+			"correct":          request.Correct,
+			"created_at":       createdAt,
 		})
 	}
-} 
+}
