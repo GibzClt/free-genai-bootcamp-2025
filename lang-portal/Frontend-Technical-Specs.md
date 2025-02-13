@@ -1,7 +1,31 @@
-# Frontend Technical Specs
+We would like to build a Japanese language learning web app.
+
+## Role/Profession
+Frontend Developer
+
+## Project Description:
+We are building a Japanese learning web app which serves the following purposes:
+- A portal to launch study activities
+- To store, group and explore Japanese vocabulary
+- to review study progress
+The web app is intended for desktop only, so we do not need to worry about mobile compatibility.
+The default route / should redirect to /dashboard
+There will always be a vertical navigation bar on the left side of the screen with the following links:
+- Dashboard
+- Study Activities
+- Words
+- Word Groups
+- Sessions
+- Settings
+
+## Technical Requirements
+- The app should be built using React as the frontend library
+- The app should be built using TypeScript as the programming language
+- The app should be built using Tailwind CSS for styling
+- The app should be built using Shadcn UI for components
+- The app should be built using Vite as the build tool
 
 ## Pages
-
 ### Dashboard "/dashboard"
 #### Purpose
     The purpose of this page is to provide a quick overview of the user's study progress and to act as the default page when the user visits the portal.
@@ -69,7 +93,7 @@
 #### Required API Endpoints
     - POST /api/study-activities
 
-## Behavior
+#### Behavior
 After the form is submitted a new tab opens with the study activity based on the url provided in the database.
 Also after the form is submitted the page will redirect to the study session show page
 
@@ -177,6 +201,7 @@ Also after the form is submitted the page will redirect to the study session sho
         - light
         - dark
         - system default
+        Clicking on this will update the theme of the portal. So styling should be done accordingly for both light and dark themes.
     - Reset history button
         - will reset all study sessions and words reviewed
     - Full Reset Data
