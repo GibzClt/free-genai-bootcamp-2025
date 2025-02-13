@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -128,6 +130,20 @@ type SeedWord struct {
 }
 
 // SeedFile represents the structure of our seed files
+type StudyActivity struct {
+	Name         string `json:"name"`
+	ThumbnailURL string `json:"thumbnail_url"`
+	Description  string `json:"description"`
+}
+
+type ConfigFile struct {
+	Groups          []struct {
+		Name       string `json:"name"`
+		SourceFile string `json:"source_file"`
+	} `json:"groups"`
+	StudyActivities []StudyActivity `json:"study_activities"`
+}
+
 type SeedFile struct {
 	GroupName string     `json:"group_name"`
 	Words     []SeedWord `json:"words"`
@@ -142,6 +158,163 @@ func Seed() error {
 		return fmt.Errorf("error opening database: %v", err)
 	}
 	defer db.Close()
+
+	// First, process config.json for study activities
+	configContent, err := os.ReadFile("db/seeds/config.json")
+	if err != nil {
+		return fmt.Errorf("error reading config.json: %v", err)
+	}
+
+	var config ConfigFile
+	if err := json.Unmarshal(configContent, &config); err != nil {
+		return fmt.Errorf("error parsing config.json: %v", err)
+	}
+
+	// Begin transaction for study activities
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("error starting transaction: %v", err)
+	}
+
+	// Clear existing study activities
+	_, err = tx.Exec("DELETE FROM study_activities")
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("error clearing study activities: %v", err)
+	}
+
+	// Insert study activities
+	for _, activity := range config.StudyActivities {
+		_, err = tx.Exec(`
+			INSERT INTO study_activities (name, description, thumbnail_url)
+			VALUES (?, ?, ?)
+		`, activity.Name, activity.Description, activity.ThumbnailURL)
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("error inserting study activity: %v", err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("error committing study activities: %v", err)
+	}
+
+	// Add random study sessions and word review items
+	tx, err = db.Begin()
+	if err != nil {
+		return fmt.Errorf("error starting transaction for study sessions: %v", err)
+	}
+
+	// Get all group IDs
+	rows, err := tx.Query("SELECT id FROM groups")
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("error getting group IDs: %v", err)
+	}
+	var groupIDs []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			tx.Rollback()
+			return fmt.Errorf("error scanning group ID: %v", err)
+		}
+		groupIDs = append(groupIDs, id)
+	}
+	rows.Close()
+
+	// Get all activity IDs
+	rows, err = tx.Query("SELECT id FROM study_activities")
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("error getting activity IDs: %v", err)
+	}
+	var activityIDs []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			tx.Rollback()
+			return fmt.Errorf("error scanning activity ID: %v", err)
+		}
+		activityIDs = append(activityIDs, id)
+	}
+	rows.Close()
+
+	// Get all word IDs
+	rows, err = tx.Query("SELECT id FROM words")
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("error getting word IDs: %v", err)
+	}
+	var wordIDs []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			tx.Rollback()
+			return fmt.Errorf("error scanning word ID: %v", err)
+		}
+		wordIDs = append(wordIDs, id)
+	}
+	rows.Close()
+
+	// Clear existing study sessions and word review items
+	_, err = tx.Exec("DELETE FROM word_review_items")
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("error clearing word review items: %v", err)
+	}
+	_, err = tx.Exec("DELETE FROM study_sessions")
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("error clearing study sessions: %v", err)
+	}
+
+	// Create random study sessions over the last 30 days
+	for i := 0; i < 50; i++ { // Create 50 study sessions
+		// Random group and activity
+		groupID := groupIDs[rand.Intn(len(groupIDs))]
+		activityID := activityIDs[rand.Intn(len(activityIDs))]
+
+		// Random date within last 30 days
+		daysAgo := rand.Intn(30)
+		createdAt := time.Now().AddDate(0, 0, -daysAgo).Format("2006-01-02 15:04:05")
+
+		// Insert study session
+		var sessionID int64
+		err = tx.QueryRow(`
+			INSERT INTO study_sessions (group_id, study_activity_id, created_at)
+			VALUES (?, ?, ?)
+			RETURNING id
+		`, groupID, activityID, createdAt).Scan(&sessionID)
+
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("error inserting study session: %v", err)
+		}
+
+		// Create 5-15 word review items for each session
+		numReviews := rand.Intn(11) + 5
+		for j := 0; j < numReviews; j++ {
+			wordID := wordIDs[rand.Intn(len(wordIDs))]
+			correct := rand.Float32() < 0.7 // 70% chance of correct answer
+
+			_, err = tx.Exec(`
+				INSERT INTO word_review_items (word_id, study_session_id, correct, created_at)
+				VALUES (?, ?, ?, ?)
+			`, wordID, sessionID, correct, createdAt)
+
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("error inserting word review item: %v", err)
+			}
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("error committing study sessions and reviews: %v", err)
+	}
 
 	// Get list of seed files
 	files, err := filepath.Glob("db/seeds/*.json")

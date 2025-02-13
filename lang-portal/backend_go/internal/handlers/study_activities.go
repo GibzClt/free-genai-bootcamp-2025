@@ -10,6 +10,72 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GetStudyActivities returns all study activities
+func GetStudyActivities(db *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		rows, err := db.Query(`
+			SELECT id, name, description, thumbnail_url
+			FROM study_activities
+			ORDER BY id
+		`)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		defer rows.Close()
+
+		var activities []struct {
+			ID           int64          `json:"id"`
+			Name         string         `json:"name"`
+			Description  sql.NullString `json:"description"`
+			ThumbnailURL sql.NullString `json:"thumbnail_url"`
+		}
+
+		for rows.Next() {
+			var activity struct {
+				ID           int64          `json:"id"`
+				Name         string         `json:"name"`
+				Description  sql.NullString `json:"description"`
+				ThumbnailURL sql.NullString `json:"thumbnail_url"`
+			}
+			if err := rows.Scan(&activity.ID, &activity.Name, &activity.Description, &activity.ThumbnailURL); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			activities = append(activities, activity)
+		}
+
+		if err = rows.Err(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Convert to response format
+		response := make([]struct {
+			ID           int64  `json:"id"`
+			Name         string `json:"name"`
+			Description  string `json:"description,omitempty"`
+			ThumbnailURL string `json:"thumbnail_url,omitempty"`
+		}, len(activities))
+
+		for i, activity := range activities {
+			response[i] = struct {
+				ID           int64  `json:"id"`
+				Name         string `json:"name"`
+				Description  string `json:"description,omitempty"`
+				ThumbnailURL string `json:"thumbnail_url,omitempty"`
+			}{
+				ID:           activity.ID,
+				Name:         activity.Name,
+				Description:  activity.Description.String,
+				ThumbnailURL: activity.ThumbnailURL.String,
+			}
+		}
+
+		c.JSON(http.StatusOK, response)
+	}
+}
+
 func GetStudyActivity(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id, err := strconv.ParseInt(c.Param("id"), 10, 64)

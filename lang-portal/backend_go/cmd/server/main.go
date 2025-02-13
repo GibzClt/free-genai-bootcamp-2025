@@ -43,6 +43,7 @@ func main() {
 		api.GET("/dashboard/quick-stats", handlers.GetQuickStats(db))
 
 		// Study activities endpoints
+		api.GET("/study-activities", handlers.GetStudyActivities(db))
 		api.GET("/study-activity/:id", handlers.GetStudyActivity(db))
 		api.GET("/study-activity/:id/study-sessions", handlers.GetStudyActivitySessions(db))
 		api.POST("/study-activities", handlers.CreateStudyActivity(db))
