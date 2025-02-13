@@ -19,10 +19,10 @@ func GetStudyActivity(db *sql.DB) gin.HandlerFunc {
 		}
 
 		var activity struct {
-			ID           int64  `json:"id"`
-			Name         string `json:"name"`
-			Description  string `json:"description"`
-			ThumbnailURL string `json:"thumbnail_url"`
+			ID           int64          `json:"id"`
+			Name         string         `json:"name"`
+			Description  sql.NullString `json:"description"`
+			ThumbnailURL sql.NullString `json:"thumbnail_url"`
 		}
 
 		err = db.QueryRow(`
@@ -40,7 +40,18 @@ func GetStudyActivity(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, activity)
+		response := struct {
+			ID           int64  `json:"id"`
+			Name         string `json:"name"`
+			Description  string `json:"description,omitempty"`
+			ThumbnailURL string `json:"thumbnail_url,omitempty"`
+		}{
+			ID:   activity.ID,
+			Name: activity.Name,
+			Description:  activity.Description.String,
+			ThumbnailURL: activity.ThumbnailURL.String,
+		}
+		c.JSON(http.StatusOK, response)
 	}
 }
 
